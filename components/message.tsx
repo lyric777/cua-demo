@@ -7,6 +7,7 @@ import equal from "fast-deep-equal";
 import { Streamdown } from "streamdown";
 
 import { ABORTED, cn } from "@/lib/utils";
+import { useUIStore } from "@/lib/events/store";
 import {
   Camera,
   CheckCircle,
@@ -31,6 +32,7 @@ const PurePreviewMessage = ({
   status: "error" | "submitted" | "streaming" | "ready";
   isLatestMessage: boolean;
 }) => {
+  const setSelectedToolCallId = useUIStore((state) => state.setSelectedToolCallId);
   return (
     <AnimatePresence key={message.id}>
       <motion.div
@@ -159,7 +161,11 @@ const PurePreviewMessage = ({
                         initial={{ y: 5, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         key={`message-${message.id}-part-${i}`}
-                        className="flex flex-col gap-2 p-2 mb-3 text-sm bg-zinc-50 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800"
+                        className="flex flex-col gap-2 p-2 mb-3 text-sm bg-zinc-50 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedToolCallId(toolCallId)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedToolCallId(toolCallId); }}
                       >
                         <div className="flex-1 flex items-center justify-center">
                           <div className="flex items-center justify-center w-8 h-8 bg-zinc-50 dark:bg-zinc-800 rounded-full">
@@ -203,7 +209,8 @@ const PurePreviewMessage = ({
                               <img
                                 src={`data:image/png;base64,${part.toolInvocation.result.data}`}
                                 alt="Generated Image"
-                                className="w-full aspect-[1024/768] rounded-sm"
+                                className="w-full aspect-[1024/768] rounded-sm cursor-pointer"
+                                onClick={() => setSelectedToolCallId(toolCallId)}
                               />
                             </div>
                           )
@@ -221,7 +228,11 @@ const PurePreviewMessage = ({
                         initial={{ y: 5, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         key={`message-${message.id}-part-${i}`}
-                        className="flex items-center gap-2 p-2 mb-3 text-sm bg-zinc-50 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800"
+                        className="flex items-center gap-2 p-2 mb-3 text-sm bg-zinc-50 dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedToolCallId(toolCallId)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedToolCallId(toolCallId); }}
                       >
                         <div className="flex items-center justify-center w-8 h-8 bg-zinc-50 dark:bg-zinc-800 rounded-full">
                           <ScrollText className="w-4 h-4" />

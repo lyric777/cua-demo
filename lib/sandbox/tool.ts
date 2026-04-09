@@ -1,4 +1,4 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { anthropic } from "@/lib/anthropic-client";
 import { getDesktop } from "./utils";
 
 const wait = async (seconds: number) => {
@@ -133,6 +133,29 @@ export const computerTool = (sandboxId: string) =>
             text: `Double clicked at ${x}, ${y}`,
           };
         }
+        case "triple_click": {
+          if (!coordinate)
+            throw new Error("Coordinate required for triple click action");
+          const [x, y] = coordinate;
+          await sandbox.runCommand({
+            cmd: "xdotool",
+            args: [
+              "mousemove",
+              "--sync",
+              String(x),
+              String(y),
+              "click",
+              "--repeat",
+              "3",
+              "1",
+            ],
+            env: DISPLAY_ENV,
+          });
+          return {
+            type: "text" as const,
+            text: `Triple clicked at ${x}, ${y}`,
+          };
+        }
         case "right_click": {
           if (!coordinate)
             throw new Error("Coordinate required for right click action");
@@ -219,6 +242,20 @@ export const computerTool = (sandboxId: string) =>
           return {
             type: "text" as const,
             text: `Dragged mouse from ${startX}, ${startY} to ${endX}, ${endY}`,
+          };
+        }
+        case "middle_click": {
+          if (!coordinate)
+            throw new Error("Coordinate required for middle click action");
+          const [x, y] = coordinate;
+          await sandbox.runCommand({
+            cmd: "xdotool",
+            args: ["mousemove", "--sync", String(x), String(y), "click", "2"],
+            env: DISPLAY_ENV,
+          });
+          return {
+            type: "text" as const,
+            text: `Middle clicked at ${x}, ${y}`,
           };
         }
         default:

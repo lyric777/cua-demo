@@ -1,4 +1,4 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { anthropic } from "@/lib/anthropic-client";
 import { streamText, UIMessage } from "ai";
 import { killDesktop } from "@/lib/sandbox/utils";
 import { bashTool, computerTool } from "@/lib/sandbox/tool";

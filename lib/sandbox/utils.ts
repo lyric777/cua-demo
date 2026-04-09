@@ -9,9 +9,13 @@ const DISPLAY_ENV = { DISPLAY: ":99" };
 export const getDesktop = async (id?: string) => {
   try {
     if (id) {
-      const sandbox = await Sandbox.get({ sandboxId: id });
-      if (sandbox.status === "running") {
-        return sandbox;
+      try {
+        const sandbox = await Sandbox.get({ sandboxId: id });
+        if (sandbox.status === "running") {
+          return sandbox;
+        }
+      } catch {
+        // Sandbox expired or not found — fall through to create a new one
       }
     }
 
@@ -20,7 +24,7 @@ export const getDesktop = async (id?: string) => {
         type: "snapshot",
         snapshotId: process.env.SANDBOX_SNAPSHOT_ID!,
       },
-      timeout: 300000,
+      timeout: 2600000, 
       ports: [NOVNC_PORT],
     });
 
@@ -114,5 +118,17 @@ export const killDesktop = async (id: string) => {
     await sandbox.stop();
   } catch (error) {
     console.error("Error killing desktop:", error);
+  }
+};
+
+/** Run a no-op command to keep the sandbox from timing out due to inactivity. */
+export const keepAliveSandbox = async (id: string): Promise<boolean> => {
+  try {
+    const sandbox = await Sandbox.get({ sandboxId: id });
+    if (sandbox.status !== "running") return false;
+    await sandbox.runCommand({ cmd: "true", args: [] });
+    return true;
+  } catch {
+    return false;
   }
 };
