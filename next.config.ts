@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@vercel/sandbox"],
+  serverExternalPackages: ["@e2b/desktop"],
   async headers() {
     return [
       {
@@ -11,11 +11,11 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "frame-src https://*.vercel.app https://*.vercel.run https://va.vercel-scripts.com",
+              "frame-src https://*.e2b.app https://*.vercel.app https://*.vercel.run https://va.vercel-scripts.com",
               "frame-ancestors 'self' https://*.vercel.app https://*.vercel.run",
-              "connect-src 'self' https://*.vercel.app https://*.vercel.run",
-              "img-src 'self' data: https://*.vercel.app https://*.vercel.run",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://*.vercel.run https://va.vercel-scripts.com",
+              "connect-src 'self' wss://*.e2b.app https://*.e2b.app https://*.vercel.app https://*.vercel.run",
+              "img-src 'self' data: https://*.e2b.app https://*.vercel.app https://*.vercel.run",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.e2b.app https://*.vercel.app https://*.vercel.run https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
             ].join("; "),
           },
