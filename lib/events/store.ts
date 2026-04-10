@@ -78,9 +78,9 @@ export function selectActionCounts(state: EventState): ActionTypeCounts {
 }
 
 export function selectEventById(
-  id: string,
+  toolCallId: string,
 ): (state: EventState) => ToolEvent | undefined {
-  return (state) => state.events.find((e) => e.id === id);
+  return (state) => state.events.find((e) => e.toolCallId === toolCallId);
 }
 
 // ── UI Store ───────────────────────────────────────────────────────────────────

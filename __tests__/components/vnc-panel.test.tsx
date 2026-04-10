@@ -57,13 +57,13 @@ describe("VncPanel memo isolation", () => {
     void getByTitle; // suppress unused warning
   });
 
-  it("renders a loading message when streamUrl is null", () => {
+  it("renders a no-desktop message when streamUrl is null", () => {
     const { getByText } = render(
       <div style={{ position: "relative" }}>
         <VncPanel streamUrl={null} isInitializing={false} onRefresh={vi.fn()} onClose={vi.fn()} />
       </div>,
     );
-    expect(getByText("Loading stream...")).toBeTruthy();
+    expect(getByText("No desktop running")).toBeTruthy();
   });
 
   it("renders an initializing message when isInitializing is true and no url", () => {

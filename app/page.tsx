@@ -35,6 +35,8 @@ export default function Chat() {
 
   const trackedToolCallsRef = useRef<Set<string>>(new Set());
   const startTimesRef = useRef<Record<string, number>>({});
+  // Tool calls being animated via fallback setTimeout — block instant-complete racing
+  const fallbackPendingRef = useRef<Set<string>>(new Set());
 
   const {
     messages,
@@ -251,9 +253,110 @@ export default function Chat() {
 
           setAgentStatus("executing");
         } else if (
+          !trackedToolCallsRef.current.has(toolCallId) &&
+          toolInvocation.state === "result"
+        ) {
+          // Fast stream: "call" phase was never seen — add as pending, then
+          // complete after a simulated execution delay so the UI shows the
+          // pending → complete transition.
+          trackedToolCallsRef.current.add(toolCallId);
+          const startTime = Date.now();
+
+          const simulatedDuration = ((): number => {
+            if (toolName === "bash") return 1500 + Math.random() * 2000;
+            const action = (toolInvocation.args as { action?: string })?.action;
+            switch (action) {
+              case "screenshot": return 1200 + Math.random() * 800;
+              case "left_click":
+              case "right_click":
+              case "middle_click":
+              case "double_click":
+              case "triple_click": return 300 + Math.random() * 300;
+              case "type": return 600 + Math.random() * 800;
+              case "key": return 250 + Math.random() * 250;
+              case "scroll": return 400 + Math.random() * 400;
+              case "mouse_move": return 150 + Math.random() * 200;
+              default: return 500 + Math.random() * 500;
+            }
+          })();
+
+          if (toolName === "computer") {
+            const computerArgs = toolInvocation.args as {
+              action: ComputerActionType;
+              coordinate?: [number, number];
+              text?: string;
+              duration?: number;
+              scroll_direction?: string;
+              scroll_amount?: number;
+              start_coordinate?: [number, number];
+            };
+            const rawResult = toolInvocation.result as
+              | { type: "image"; data: string }
+              | { type: "text"; text: string };
+            const result =
+              rawResult.type === "image"
+                ? { type: "image" as const, data: rawResult.data }
+                : { type: "text" as const, text: rawResult.text };
+            const event: ComputerToolEvent = {
+              id: crypto.randomUUID(),
+              toolCallId,
+              timestamp: startTime,
+              status: "pending",
+              type: "computer",
+              action: computerArgs.action,
+              ...(computerArgs.coordinate !== undefined && {
+                coordinate: computerArgs.coordinate,
+              }),
+              ...(computerArgs.text !== undefined && { text: computerArgs.text }),
+              ...(computerArgs.scroll_direction !== undefined && {
+                scroll_direction: computerArgs.scroll_direction,
+              }),
+              ...(computerArgs.scroll_amount !== undefined && {
+                scroll_amount: computerArgs.scroll_amount,
+              }),
+              ...(computerArgs.start_coordinate !== undefined && {
+                start_coordinate: computerArgs.start_coordinate,
+              }),
+            };
+            addEvent(event);
+            fallbackPendingRef.current.add(toolCallId);
+            setTimeout(() => {
+              fallbackPendingRef.current.delete(toolCallId);
+              updateEvent(toolCallId, {
+                status: "complete",
+                duration: Math.round(simulatedDuration),
+                result,
+              });
+            }, simulatedDuration);
+          } else if (toolName === "bash") {
+            const bashArgs = toolInvocation.args as { command: string };
+            const rawResult = toolInvocation.result as string;
+            const event: BashToolEvent = {
+              id: crypto.randomUUID(),
+              toolCallId,
+              timestamp: startTime,
+              status: "pending",
+              type: "bash",
+              command: bashArgs.command,
+            };
+            addEvent(event);
+            fallbackPendingRef.current.add(toolCallId);
+            setTimeout(() => {
+              fallbackPendingRef.current.delete(toolCallId);
+              updateEvent(toolCallId, {
+                status: "complete",
+                duration: Math.round(simulatedDuration),
+                result: { output: rawResult },
+              });
+            }, simulatedDuration);
+          }
+        } else if (
           trackedToolCallsRef.current.has(toolCallId) &&
           toolInvocation.state === "result"
         ) {
+          // If this tool call is being handled by a fallback setTimeout, skip —
+          // the timer will complete it with a realistic duration.
+          if (fallbackPendingRef.current.has(toolCallId)) continue;
           const storeEvent = useEventStore
             .getState()
             .events.find((e) => e.toolCallId === toolCallId);

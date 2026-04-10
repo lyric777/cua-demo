@@ -89,7 +89,7 @@ const PurePreviewMessage = ({
                       duration,
                       scroll_amount,
                       scroll_direction,
-                    } = args;
+                    } = args ?? {};
                     let actionLabel = "";
                     let actionDetail = "";
                     let ActionIcon = null;
@@ -221,7 +221,7 @@ const PurePreviewMessage = ({
                     );
                   }
                   if (toolName === "bash") {
-                    const { command } = args;
+                    const { command } = args ?? {};
 
                     return (
                       <motion.div
@@ -241,7 +241,7 @@ const PurePreviewMessage = ({
                           <div className="font-medium flex items-baseline gap-2">
                             Running command
                             <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">
-                              {command.slice(0, 40)}...
+                              {(command ?? "").slice(0, 40)}...
                             </span>
                           </div>
                         </div>

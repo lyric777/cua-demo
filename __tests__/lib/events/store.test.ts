@@ -233,19 +233,19 @@ describe("selectActionCounts", () => {
 // ── selectEventById ────────────────────────────────────────────────────────────
 
 describe("selectEventById", () => {
-  it("returns the matching event by id", () => {
-    const event = makeComputerEvent({ id: "target-id" });
+  it("returns the matching event by toolCallId", () => {
+    const event = makeComputerEvent({ toolCallId: "target-tc" });
     useEventStore.getState().addEvent(event);
 
-    const selector = selectEventById("target-id");
+    const selector = selectEventById("target-tc");
     const found = selector(useEventStore.getState());
     expect(found).toEqual(event);
   });
 
-  it("returns undefined for a missing id", () => {
-    useEventStore.getState().addEvent(makeComputerEvent({ id: "real-id" }));
+  it("returns undefined for a missing toolCallId", () => {
+    useEventStore.getState().addEvent(makeComputerEvent({ toolCallId: "real-tc" }));
 
-    const selector = selectEventById("wrong-id");
+    const selector = selectEventById("wrong-tc");
     expect(selector(useEventStore.getState())).toBeUndefined();
   });
 });
