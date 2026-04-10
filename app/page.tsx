@@ -4,7 +4,6 @@ import { PreviewMessage } from "@/components/message";
 import { DebugPanel } from "@/components/debug-panel";
 import { VncPanel } from "@/components/vnc-panel";
 import { ToolCallDetail } from "@/components/tool-call-detail";
-import { getDesktopURL } from "@/lib/sandbox/utils";
 import { useScrollToBottom } from "@/lib/use-scroll-to-bottom";
 import { useChat } from "@ai-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -97,7 +96,10 @@ export default function Chat() {
   const refreshDesktop = useCallback(async () => {
     try {
       setIsInitializing(true);
-      const { streamUrl: url, id } = await getDesktopURL(sandboxId || undefined);
+      const params = sandboxId ? `?sandboxId=${encodeURIComponent(sandboxId)}` : "";
+      const res = await fetch(`/api/desktop${params}`);
+      if (!res.ok) throw new Error(await res.text());
+      const { streamUrl: url, id } = await res.json();
       setStreamUrl(url);
       setSandboxId(id);
     } catch (err) {
@@ -158,7 +160,10 @@ export default function Chat() {
     const init = async () => {
       try {
         setIsInitializing(true);
-        const { streamUrl: url, id } = await getDesktopURL(sandboxId ?? undefined);
+        const params = sandboxId ? `?sandboxId=${encodeURIComponent(sandboxId)}` : "";
+        const res = await fetch(`/api/desktop${params}`);
+        if (!res.ok) throw new Error(await res.text());
+        const { streamUrl: url, id } = await res.json();
         setStreamUrl(url);
         setSandboxId(id);
       } catch (err) {
