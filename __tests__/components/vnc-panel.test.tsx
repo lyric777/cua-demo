@@ -30,6 +30,7 @@ function makeWrapper(initialStreamUrl: string) {
           streamUrl={initialStreamUrl}
           isInitializing={false}
           onRefresh={vi.fn()}
+          onClose={vi.fn()}
         />
       </div>
     );
@@ -46,6 +47,7 @@ describe("VncPanel memo isolation", () => {
           streamUrl="https://example.com/vnc"
           isInitializing={false}
           onRefresh={vi.fn()}
+          onClose={vi.fn()}
         />
       </div>,
     );
@@ -58,7 +60,7 @@ describe("VncPanel memo isolation", () => {
   it("renders a loading message when streamUrl is null", () => {
     const { getByText } = render(
       <div style={{ position: "relative" }}>
-        <VncPanel streamUrl={null} isInitializing={false} onRefresh={vi.fn()} />
+        <VncPanel streamUrl={null} isInitializing={false} onRefresh={vi.fn()} onClose={vi.fn()} />
       </div>,
     );
     expect(getByText("Loading stream...")).toBeTruthy();
@@ -67,7 +69,7 @@ describe("VncPanel memo isolation", () => {
   it("renders an initializing message when isInitializing is true and no url", () => {
     const { getByText } = render(
       <div style={{ position: "relative" }}>
-        <VncPanel streamUrl={null} isInitializing={true} onRefresh={vi.fn()} />
+        <VncPanel streamUrl={null} isInitializing={true} onRefresh={vi.fn()} onClose={vi.fn()} />
       </div>,
     );
     expect(getByText("Initializing desktop...")).toBeTruthy();
@@ -95,6 +97,7 @@ describe("VncPanel memo isolation", () => {
             streamUrl="https://example.com"
             isInitializing={false}
             onRefresh={onRefresh}
+            onClose={vi.fn()}
           />
         </div>
       );
@@ -130,6 +133,7 @@ describe("VncPanel memo isolation", () => {
           streamUrl="https://example.com/first"
           isInitializing={false}
           onRefresh={onRefresh}
+          onClose={vi.fn()}
         />
       </div>,
     );
@@ -143,6 +147,7 @@ describe("VncPanel memo isolation", () => {
           streamUrl="https://example.com/second"
           isInitializing={false}
           onRefresh={onRefresh}
+          onClose={vi.fn()}
         />
       </div>,
     );

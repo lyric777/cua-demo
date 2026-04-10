@@ -67,7 +67,11 @@ export const killDesktop = async (id: string) => {
     const sandbox = await Sandbox.connect(id);
     await sandbox.kill();
   } catch (error) {
-    console.error("Error killing desktop:", error);
+    // Sandbox already gone — not an error worth logging
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("not found") && !message.includes("NotFound")) {
+      console.error("Error killing desktop:", error);
+    }
   }
 };
 

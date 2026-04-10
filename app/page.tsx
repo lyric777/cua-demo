@@ -93,6 +93,16 @@ export default function Chat() {
 
   const isLoading = status !== "ready";
 
+  const closeDesktop = useCallback(async () => {
+    if (!sandboxId) return;
+    await fetch(`/api/kill-desktop?sandboxId=${encodeURIComponent(sandboxId)}`, {
+      method: "POST",
+      keepalive: true,
+    }).catch(() => {});
+    setStreamUrl(null);
+    setSandboxId(null);
+  }, [sandboxId]);
+
   const refreshDesktop = useCallback(async () => {
     try {
       setIsInitializing(true);
@@ -361,6 +371,7 @@ export default function Chat() {
               streamUrl={streamUrl}
               isInitializing={isInitializing}
               onRefresh={refreshDesktop}
+              onClose={closeDesktop}
             />
             <ToolCallDetail />
           </ResizablePanel>
