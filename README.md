@@ -1,30 +1,29 @@
-<a href="https://ai-sdk-computer-use.vercel.app">
-  <h1 align="center">AI SDK Computer Use Demo</h1>
-</a>
+<h1 align="center">AI SDK Computer Use Demo</h1>
 
 <p align="center">
-  An open-source AI chatbot demonstrating computer use capabilities with Anthropic Claude Sonnet 4.5, Vercel Sandboxes, and the AI SDK by Vercel.
+  An AI agent that controls a live remote desktop — powered by Anthropic Claude, e2b Desktop sandboxes, and the Vercel AI SDK.
 </p>
 
 <p align="center">
   <a href="#features"><strong>Features</strong></a> ·
   <a href="#how-it-works"><strong>How It Works</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running Locally</strong></a>
+  <a href="#running-locally"><strong>Running Locally</strong></a> ·
+  <a href="#architecture-notes"><strong>Architecture Notes</strong></a>
 </p>
 <br/>
 
 ## Features
 
 - Streaming text responses powered by the [AI SDK](https://sdk.vercel.ai/docs).
-- Anthropic Claude Sonnet 4.5 with [computer use](https://sdk.vercel.ai/docs/guides/computer-use) and bash tool capabilities.
-- Remote desktop environment running in a [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) with Chrome, a window manager, and VNC streaming.
-- [shadcn/ui](https://ui.shadcn.com/) components for a modern, responsive UI powered by [Tailwind CSS](https://tailwindcss.com).
-- Built with the latest [Next.js](https://nextjs.org) App Router.
+- Anthropic Claude (computer use model) with `computer` and `bash` tool capabilities.
+- Remote desktop running in an [e2b](https://e2b.dev) Desktop sandbox — Chrome, window manager, and VNC streaming ready in seconds, no snapshot needed.
+- Live debug panel showing every tool call event, status, duration, and a clickable detail overlay.
+- [shadcn/ui](https://ui.shadcn.com/) components with [Tailwind CSS](https://tailwindcss.com).
+- Built with [Next.js](https://nextjs.org) App Router.
 
 ## How It Works
 
-The app spins up a Vercel Sandbox from a pre-built snapshot that includes:
+On first message, the app creates an **e2b Desktop sandbox** that includes:
 
 - **Xvnc** — a virtual X11 display server
 - **openbox** — a lightweight window manager
@@ -32,14 +31,14 @@ The app spins up a Vercel Sandbox from a pre-built snapshot that includes:
 - **Google Chrome** — auto-launched so the AI agent has a browser ready
 - **xdotool + ImageMagick** — for mouse/keyboard control and screenshots
 
-When a user sends a message, Claude uses the `computer` tool (screenshot, click, type, scroll) and the `bash` tool (run shell commands) to interact with the sandbox desktop. The noVNC stream is displayed in a resizable iframe alongside the chat.
+Claude uses the `computer` tool (screenshot, click, type, scroll…) and the `bash` tool to interact with the desktop. The noVNC stream is embedded in a resizable iframe alongside the chat. A keepalive heartbeat prevents the sandbox from timing out mid-session.
 
 ### Architecture
 
 ```
-User ↔ Next.js Chat UI ↔ AI SDK ↔ Claude Sonnet 4.5
+User ↔ Next.js Chat UI ↔ AI SDK ↔ Claude (computer use)
                                         ↓
-                                  Vercel Sandbox
+                                  e2b Desktop Sandbox
                               ┌─────────────────────┐
                               │  Xvnc (:99)         │
                               │  openbox             │
@@ -50,19 +49,13 @@ User ↔ Next.js Chat UI ↔ AI SDK ↔ Claude Sonnet 4.5
                               noVNC iframe in browser
 ```
 
-## Deploy Your Own
-
-You can deploy your own version to Vercel by clicking the button below:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=AI+SDK+Computer+Use+Demo&repository-name=ai-sdk-computer-use&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fai-sdk-computer-use&demo-title=AI+SDK+Computer+Use+Demo&demo-url=https%3A%2F%2Fai-sdk-computer-use.vercel.app%2F&demo-description=A+chatbot+application+built+with+Next.js+demonstrating+Anthropic+Claude+Sonnet+4.5+computer+use+capabilities+with+Vercel+Sandboxes&env=ANTHROPIC_API_KEY,SANDBOX_SNAPSHOT_ID)
-
 ## Running Locally
 
 ### Prerequisites
 
 - Node.js 18+
-- A [Vercel](https://vercel.com) account (for Sandbox access)
-- An [Anthropic API key](https://console.anthropic.com/)
+- An [Anthropic API key](https://console.anthropic.com/) (or a compatible provider — see below)
+- An [e2b API key](https://e2b.dev) for desktop sandboxes
 
 ### 1. Install dependencies
 
@@ -70,62 +63,44 @@ You can deploy your own version to Vercel by clicking the button below:
 pnpm install
 ```
 
-### 2. Set up Vercel credentials
+### 2. Set up environment variables
 
-Install the [Vercel CLI](https://vercel.com/docs/cli) and link your project:
-
-```bash
-pnpm install -g vercel
-vercel link
-vercel env pull
-```
-
-This creates a `.env.local` file with `VERCEL_OIDC_TOKEN` for Sandbox authentication.
-
-Alternatively, set `VERCEL_TOKEN`, `VERCEL_TEAM_ID`, and `VERCEL_PROJECT_ID` manually in your `.env.local`.
-
-### 3. Create a sandbox snapshot
-
-The snapshot pre-installs the desktop environment (Xvnc, Chrome, openbox, noVNC, xdotool, ImageMagick) so sandboxes boot in seconds.
+Copy `.env.example` to `.env.local` and fill in your keys:
 
 ```bash
-npx tsx lib/sandbox/create-snapshot.ts
+cp .env.example .env.local
 ```
-
-This takes ~10 minutes. When done, it outputs a snapshot ID. Add it to your `.env.local`:
-
-```
-SANDBOX_SNAPSHOT_ID=snap_xxxxxxxxxxxxx
-```
-
-### 4. Add your Anthropic API key
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+E2B_API_KEY=e2b_...
 ```
 
-### 5. Start the dev server
+**Using a compatible API provider (e.g. Packy):** set `ANTHROPIC_BASE_URL` to the provider's base URL. The client automatically converts `x-api-key` to `Authorization: Bearer` when a custom base URL is present.
+
+```
+ANTHROPIC_BASE_URL=https://www.packyapi.com
+ANTHROPIC_API_KEY=your_provider_key
+```
+
+### 3. Start the dev server
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to use the computer use agent.
+Open [http://localhost:3000](http://localhost:3000) and send a message to start a desktop session.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
-| `SANDBOX_SNAPSHOT_ID` | Yes | Vercel Sandbox snapshot with the desktop environment |
-| `VERCEL_OIDC_TOKEN` | Yes* | Auto-set by `vercel env pull` for Sandbox auth |
-| `VERCEL_TOKEN` | Alt* | Alternative to OIDC — a Vercel personal access token |
-| `VERCEL_TEAM_ID` | Alt* | Required with `VERCEL_TOKEN` |
-| `VERCEL_PROJECT_ID` | Alt* | Required with `VERCEL_TOKEN` |
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key (or compatible provider key) |
+| `E2B_API_KEY` | Yes | e2b API key for Desktop sandbox creation |
+| `ANTHROPIC_BASE_URL` | No | Override API base URL for compatible providers |
+| `HTTPS_PROXY` | No | HTTP/HTTPS proxy for outbound requests |
 
-\* Either `VERCEL_OIDC_TOKEN` (via `vercel env pull`) or the `VERCEL_TOKEN` + team/project IDs are required for Sandbox authentication.
-
-## Part 1 Architecture Notes
+## Architecture Notes
 
 ### State Management
 
@@ -133,16 +108,17 @@ All agent activity is tracked through two [Zustand](https://github.com/pmndrs/zu
 
 **`useEventStore`** — the event pipeline:
 - Every tool call (`computer` or `bash`) dispatches a typed `ToolEvent` into the store as it enters `state: "call"`, then gets updated with result + duration when it transitions to `state: "result"`.
-- Events use TypeScript discriminated unions (`ComputerToolEvent | BashToolEvent`) so there is no `any` casting anywhere in the pipeline.
+- Events use TypeScript discriminated unions (`ComputerToolEvent | BashToolEvent`) — no `any` casting anywhere in the pipeline.
 - `agentStatus` (`idle | thinking | executing`) is derived from the AI SDK `status` field and updated alongside events.
+- **Fast-stream fallback**: when the AI SDK fires `state: "result"` before React sees `state: "call"` (happens when the LLM responds very quickly), the effect inserts the event as `pending` and schedules a `setTimeout` to complete it with a realistic simulated duration, producing the same pending → complete transition visible in the debug panel.
 
 **`useUIStore`** — lightweight UI state:
-- `selectedToolCallId` — which tool call card is currently expanded in the right-panel overlay.
+- `selectedToolCallId` — which tool call card is currently expanded in the right-panel overlay (matched by `toolCallId`, not the internal event `id`).
 - `isDebugPanelOpen` — whether the collapsible debug panel is visible.
 
-Actions are read via `useEventStore.getState()` inside `useEffect` callbacks rather than as hook subscriptions. This avoids including the actions themselves in the effect dependency array, which would cause infinite re-render loops.
+Actions are read via `useEventStore.getState()` inside `useEffect` callbacks rather than as hook subscriptions. This avoids including the actions in the effect dependency array, which would cause infinite re-render loops.
 
-`selectActionCounts` (a plain selector function that returns a `Record<ActionType, number>`) is wrapped with Zustand's `useShallow` to prevent a new object reference on every render from triggering unnecessary updates in the debug panel.
+`selectActionCounts` is wrapped with Zustand's `useShallow` to prevent a new object reference on every render from triggering unnecessary updates in the debug panel.
 
 ### VNC Component Isolation
 
@@ -156,8 +132,15 @@ The VNC iframe lives inside a `React.memo`-wrapped component (`VncPanel`) with a
   prev.onClose === next.onClose
 ```
 
-This means the iframe **never re-renders** while Claude is streaming chat or tool results — only a genuine change to the desktop URL or initializing state triggers a re-render. The `onRefresh` and `onClose` callbacks are both created with `useCallback` (keyed on `sandboxId`) so their references stay stable between renders.
+The iframe **never re-renders** while Claude is streaming chat or tool results — only a genuine change to the desktop URL or initializing state triggers a re-render. The `onRefresh` and `onClose` callbacks are created with `useCallback` (keyed on `sandboxId`) so their references stay stable between renders.
 
 ### Keepalive
 
-A `setInterval` heartbeat in `page.tsx` pings `GET /api/keepalive` every 120 seconds while a sandbox is active. This resets the e2b inactivity timer and prevents the desktop from being paused mid-session.
+A `setInterval` heartbeat pings `GET /api/keepalive` every 120 seconds while a sandbox is active. This resets the e2b inactivity timer and prevents the desktop from being paused mid-session.
+
+### Anthropic Client
+
+`lib/anthropic-client.ts` wraps `createAnthropic` with a custom `fetch` that:
+1. Routes through `HTTPS_PROXY` if set (via `undici` `ProxyAgent`).
+2. Converts `x-api-key` → `Authorization: Bearer` when `ANTHROPIC_BASE_URL` is set — needed for Packy and other compatible proxy providers that use Bearer auth instead of Anthropic's default header.
+
