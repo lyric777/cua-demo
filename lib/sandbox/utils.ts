@@ -38,8 +38,12 @@ export const getDesktopURL = async (id?: string) => {
       }
     }
 
+    console.log("[desktop] E2B_API_KEY present:", !!process.env.E2B_API_KEY);
+    console.log("[desktop] Creating sandbox...");
     const desktop = await Sandbox.create({ timeoutMs: 2600000 });
+    console.log("[desktop] Sandbox created:", desktop.sandboxId);
     await desktop.stream.start();
+    console.log("[desktop] Stream started");
     await desktop.launch("google-chrome");
     await desktop.wait(3000);
 
@@ -47,7 +51,10 @@ export const getDesktopURL = async (id?: string) => {
     const streamUrl = desktop.stream.getUrl();
     return { streamUrl, id: desktop.sandboxId };
   } catch (error) {
-    console.error("Error in getDesktopURL:", error);
+    console.error("[desktop] Error in getDesktopURL:", String(error));
+    if (error instanceof Error) {
+      console.error("[desktop] Stack:", error.stack);
+    }
     throw error;
   }
 };
