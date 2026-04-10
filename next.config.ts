@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@e2b/desktop"],
+  serverExternalPackages: ["@e2b/desktop", "e2b"],
   async headers() {
     return [
       {
