@@ -1,8 +1,17 @@
 "use server";
 
-import { Sandbox } from "@e2b/desktop";
+import type { Sandbox } from "@e2b/desktop";
+
+// Use dynamic import so Node.js loads the ESM build (dist/index.mjs) of e2b,
+// which supports chalk@5. Static import causes webpack to emit require() which
+// loads the CJS build and then fails to require() chalk (ESM-only).
+const getSandboxClass = async (): Promise<typeof Sandbox> => {
+  const { Sandbox } = await import("@e2b/desktop");
+  return Sandbox;
+};
 
 export const getDesktop = async (id?: string): Promise<Sandbox> => {
+  const Sandbox = await getSandboxClass();
   if (id) {
     try {
       return await Sandbox.connect(id);
@@ -26,6 +35,7 @@ export const getDesktop = async (id?: string): Promise<Sandbox> => {
 };
 
 export const getDesktopURL = async (id?: string) => {
+  const Sandbox = await getSandboxClass();
   try {
     if (id) {
       try {
@@ -38,28 +48,21 @@ export const getDesktopURL = async (id?: string) => {
       }
     }
 
-    console.log("[desktop] E2B_API_KEY present:", !!process.env.E2B_API_KEY);
-    console.log("[desktop] Creating sandbox...");
     const desktop = await Sandbox.create({ timeoutMs: 2600000 });
-    console.log("[desktop] Sandbox created:", desktop.sandboxId);
     await desktop.stream.start();
-    console.log("[desktop] Stream started");
     await desktop.launch("google-chrome");
     await desktop.wait(3000);
 
-    // stream.getUrl() defaults: autoConnect=true, resize='scale'
     const streamUrl = desktop.stream.getUrl();
     return { streamUrl, id: desktop.sandboxId };
   } catch (error) {
     console.error("[desktop] Error in getDesktopURL:", String(error));
-    if (error instanceof Error) {
-      console.error("[desktop] Stack:", error.stack);
-    }
     throw error;
   }
 };
 
 export const killDesktop = async (id: string) => {
+  const Sandbox = await getSandboxClass();
   try {
     const sandbox = await Sandbox.connect(id);
     await sandbox.kill();
@@ -70,6 +73,7 @@ export const killDesktop = async (id: string) => {
 
 /** Run a no-op command to keep the sandbox from timing out due to inactivity. */
 export const keepAliveSandbox = async (id: string): Promise<boolean> => {
+  const Sandbox = await getSandboxClass();
   try {
     const sandbox = await Sandbox.connect(id);
     await sandbox.commands.run("true");
