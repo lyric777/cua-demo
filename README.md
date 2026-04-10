@@ -124,3 +124,40 @@ Open [http://localhost:3000](http://localhost:3000) to use the computer use agen
 | `VERCEL_PROJECT_ID` | Alt* | Required with `VERCEL_TOKEN` |
 
 \* Either `VERCEL_OIDC_TOKEN` (via `vercel env pull`) or the `VERCEL_TOKEN` + team/project IDs are required for Sandbox authentication.
+
+## Part 1 Architecture Notes
+
+### State Management
+
+All agent activity is tracked through two [Zustand](https://github.com/pmndrs/zustand) stores:
+
+**`useEventStore`** — the event pipeline:
+- Every tool call (`computer` or `bash`) dispatches a typed `ToolEvent` into the store as it enters `state: "call"`, then gets updated with result + duration when it transitions to `state: "result"`.
+- Events use TypeScript discriminated unions (`ComputerToolEvent | BashToolEvent`) so there is no `any` casting anywhere in the pipeline.
+- `agentStatus` (`idle | thinking | executing`) is derived from the AI SDK `status` field and updated alongside events.
+
+**`useUIStore`** — lightweight UI state:
+- `selectedToolCallId` — which tool call card is currently expanded in the right-panel overlay.
+- `isDebugPanelOpen` — whether the collapsible debug panel is visible.
+
+Actions are read via `useEventStore.getState()` inside `useEffect` callbacks rather than as hook subscriptions. This avoids including the actions themselves in the effect dependency array, which would cause infinite re-render loops.
+
+`selectActionCounts` (a plain selector function that returns a `Record<ActionType, number>`) is wrapped with Zustand's `useShallow` to prevent a new object reference on every render from triggering unnecessary updates in the debug panel.
+
+### VNC Component Isolation
+
+The VNC iframe lives inside a `React.memo`-wrapped component (`VncPanel`) with a custom comparator:
+
+```ts
+(prev, next) =>
+  prev.streamUrl === next.streamUrl &&
+  prev.isInitializing === next.isInitializing &&
+  prev.onRefresh === next.onRefresh &&
+  prev.onClose === next.onClose
+```
+
+This means the iframe **never re-renders** while Claude is streaming chat or tool results — only a genuine change to the desktop URL or initializing state triggers a re-render. The `onRefresh` and `onClose` callbacks are both created with `useCallback` (keyed on `sandboxId`) so their references stay stable between renders.
+
+### Keepalive
+
+A `setInterval` heartbeat in `page.tsx` pings `GET /api/keepalive` every 120 seconds while a sandbox is active. This resets the e2b inactivity timer and prevents the desktop from being paused mid-session.
