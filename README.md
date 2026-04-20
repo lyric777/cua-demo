@@ -33,8 +33,6 @@ On first message, the app creates an **e2b Desktop sandbox** that includes:
 
 Claude uses the `computer` tool (screenshot, click, type, scroll…) and the `bash` tool to interact with the desktop. The noVNC stream is embedded in a resizable iframe alongside the chat. A keepalive heartbeat prevents the sandbox from timing out mid-session.
 
-## demo
-video url: https://www.loom.com/share/761384b8cb19432e98df68e419132d67
 
 ### Architecture
 
